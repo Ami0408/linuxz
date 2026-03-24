@@ -1,0 +1,806 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Linux & Windows OS Quiz</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Manrope:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#111318;--surface:#1a1d26;--card:#21253000;--accent:#f7c35f;--red:#ff5e5e;--green:#4ecb71;--blue:#5eb8ff;--muted:#555b6e;--text:#e8eaf0;--border:#2a2d3a;--radius:10px}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);color:var(--text);font-family:'Manrope',sans-serif;min-height:100vh;overflow-x:hidden}
+body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse 80% 50% at 50% -10%,rgba(247,195,95,.06),transparent);pointer-events:none;z-index:0}
+#app{position:relative;z-index:1}
+.screen{display:none}
+.screen.active{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;padding:20px}
+
+/* ── START ── */
+#start-screen{text-align:center}
+.tag{display:inline-block;background:rgba(247,195,95,.12);border:1px solid rgba(247,195,95,.3);color:var(--accent);font-family:'JetBrains Mono',monospace;font-size:.65rem;letter-spacing:3px;text-transform:uppercase;padding:6px 14px;border-radius:100px;margin-bottom:28px}
+.start-h{font-size:clamp(2rem,5vw,3.6rem);font-weight:800;line-height:1.1;margin-bottom:16px;letter-spacing:-1px}
+.start-h span{color:var(--accent)}
+.start-sub{color:var(--muted);font-size:1rem;font-weight:300;max-width:460px;margin:0 auto 36px;line-height:1.7}
+.chips{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-bottom:44px}
+.chip{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 18px;font-size:.8rem;color:var(--muted)}
+.chip b{display:block;font-size:1.2rem;color:var(--text);font-weight:700;margin-bottom:2px}
+.btn-go{background:var(--accent);color:#111;border:none;border-radius:var(--radius);padding:15px 44px;font-family:'Manrope',sans-serif;font-size:1rem;font-weight:800;cursor:pointer;transition:transform .15s,box-shadow .15s;box-shadow:0 4px 24px rgba(247,195,95,.35);letter-spacing:.5px}
+.btn-go:hover{transform:translateY(-2px);box-shadow:0 8px 32px rgba(247,195,95,.45)}
+.hint{margin-top:14px;font-family:'JetBrains Mono',monospace;font-size:.65rem;color:var(--muted);letter-spacing:1px}
+kbd{background:var(--surface);border:1px solid var(--border);border-radius:3px;padding:1px 5px;font-family:'JetBrains Mono',monospace;font-size:.6rem}
+
+/* ── QUIZ ── */
+#quiz-screen{justify-content:flex-start;padding:0}
+.qbar{width:100%;background:var(--surface);border-bottom:1px solid var(--border);padding:12px 24px;display:flex;align-items:center;gap:16px;position:sticky;top:0;z-index:10;flex-wrap:wrap}
+.qbar-left{font-family:'JetBrains Mono',monospace;font-size:.75rem;color:var(--muted);white-space:nowrap}
+.qbar-left strong{color:var(--text);font-size:1rem}
+.prog-wrap{flex:1;min-width:80px;height:5px;background:var(--border);border-radius:3px;overflow:hidden}
+.prog-fill{height:100%;background:linear-gradient(90deg,var(--accent),#ffaa00);border-radius:3px;transition:width .3s ease}
+.timer{font-family:'JetBrains Mono',monospace;font-size:1.05rem;font-weight:600;background:var(--bg);border:1px solid var(--border);padding:6px 14px;border-radius:6px;min-width:68px;text-align:center;transition:color .3s,border-color .3s}
+.timer.warn{color:var(--accent);border-color:rgba(247,195,95,.4)}
+.timer.danger{color:var(--red);border-color:rgba(255,94,94,.4);animation:blink 1s step-end infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.4}}
+.qwrap{width:100%;max-width:740px;padding:36px 24px 80px;animation:qin .25s ease}
+@keyframes qin{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+.cat-pill{display:inline-flex;align-items:center;gap:5px;font-family:'JetBrains Mono',monospace;font-size:.6rem;letter-spacing:2px;text-transform:uppercase;padding:4px 10px;border-radius:4px;margin-bottom:14px}
+.cat-pill.linux{background:rgba(78,203,113,.1);color:var(--green);border:1px solid rgba(78,203,113,.2)}
+.cat-pill.windows{background:rgba(94,184,255,.1);color:var(--blue);border:1px solid rgba(94,184,255,.2)}
+.cat-pill.general{background:rgba(247,195,95,.1);color:var(--accent);border:1px solid rgba(247,195,95,.2)}
+.qnum{font-family:'JetBrains Mono',monospace;font-size:.65rem;color:var(--muted);margin-bottom:8px;letter-spacing:1px}
+.qtext{font-size:clamp(1.05rem,2.5vw,1.25rem);font-weight:700;line-height:1.5;margin-bottom:26px;color:var(--text)}
+.opts{display:flex;flex-direction:column;gap:9px;margin-bottom:24px}
+.opt{background:var(--surface);border:1.5px solid var(--border);border-radius:var(--radius);padding:13px 16px;display:flex;align-items:center;gap:12px;cursor:pointer;transition:border-color .15s,background .15s,transform .12s;font-size:.9rem;text-align:left;color:var(--text);font-family:'Manrope',sans-serif}
+.opt:hover{border-color:var(--accent);background:rgba(247,195,95,.04);transform:translateX(4px)}
+.opt.sel{border-color:var(--accent);background:rgba(247,195,95,.08);transform:translateX(4px)}
+.opt.sel .oletter{background:var(--accent);color:#111}
+.oletter{width:28px;height:28px;border-radius:50%;background:var(--border);display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:.68rem;font-weight:600;flex-shrink:0;transition:background .15s,color .15s}
+.opt:hover .oletter{background:var(--accent);color:#111}
+.qfooter{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.btn-skip{background:transparent;border:1px solid var(--border);border-radius:var(--radius);padding:10px 20px;font-size:.82rem;color:var(--muted);cursor:pointer;font-family:'Manrope',sans-serif;transition:border-color .15s,color .15s}
+.btn-skip:hover{border-color:var(--muted);color:var(--text)}
+.btn-next{background:var(--accent);color:#111;border:none;border-radius:var(--radius);padding:11px 30px;font-family:'Manrope',sans-serif;font-weight:800;font-size:.9rem;cursor:pointer;box-shadow:0 3px 0 rgba(0,0,0,.4);transition:transform .12s,box-shadow .12s;display:flex;align-items:center;gap:6px}
+.btn-next:hover{transform:translateY(-2px);box-shadow:0 5px 0 rgba(0,0,0,.4)}
+.btn-next:active{transform:translateY(1px);box-shadow:0 1px 0 rgba(0,0,0,.4)}
+.enter-tip{text-align:center;font-family:'JetBrains Mono',monospace;font-size:.6rem;color:var(--muted);margin-top:8px;letter-spacing:1px}
+
+/* ── RESULTS ── */
+#results-screen{background:var(--surface);text-align:center}
+.res-box{max-width:580px;width:100%}
+.score-big{font-size:clamp(5rem,18vw,9rem);font-weight:800;line-height:1;color:var(--accent);font-family:'Manrope',sans-serif;letter-spacing:-3px}
+.score-of{font-family:'JetBrains Mono',monospace;font-size:.7rem;letter-spacing:3px;color:var(--muted);margin-bottom:24px}
+.grade-text{font-size:1.5rem;font-weight:800;margin-bottom:6px}
+.grade-msg{color:var(--muted);font-size:.9rem;font-weight:300;margin-bottom:32px}
+.res-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:32px}
+.rs{background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:16px 8px}
+.rs .rv{font-size:1.8rem;font-weight:800;font-family:'Manrope',sans-serif;display:block;margin-bottom:3px}
+.rs .rl{font-family:'JetBrains Mono',monospace;font-size:.6rem;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted)}
+.rv.g{color:var(--green)}.rv.r{color:var(--red)}.rv.y{color:var(--accent)}
+.res-btns{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+.btn-rev{background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:var(--radius);padding:12px 26px;font-family:'Manrope',sans-serif;font-weight:700;font-size:.85rem;cursor:pointer;transition:border-color .15s}
+.btn-rev:hover{border-color:var(--accent);color:var(--accent)}
+.btn-new{background:var(--accent);color:#111;border:none;border-radius:var(--radius);padding:12px 26px;font-family:'Manrope',sans-serif;font-weight:800;font-size:.85rem;cursor:pointer;box-shadow:0 3px 0 rgba(0,0,0,.4);transition:transform .12s}
+.btn-new:hover{transform:translateY(-2px)}
+
+/* ── REVIEW ── */
+#review-screen{align-items:flex-start;justify-content:flex-start;padding:0}
+.revbar{width:100%;background:var(--surface);border-bottom:1px solid var(--border);padding:14px 24px;display:flex;align-items:center;justify-content:space-between;gap:12px;position:sticky;top:0;z-index:10;flex-wrap:wrap}
+.revbar h2{font-size:1rem;font-weight:800;color:var(--text)}
+.frow{display:flex;gap:7px;flex-wrap:wrap}
+.fb{background:transparent;border:1px solid var(--border);border-radius:100px;padding:5px 13px;font-size:.68rem;font-family:'JetBrains Mono',monospace;letter-spacing:1px;color:var(--muted);cursor:pointer;transition:all .15s}
+.fb:hover,.fb.on{background:var(--accent);border-color:var(--accent);color:#111}
+.btn-back{background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:7px 14px;font-size:.75rem;color:var(--muted);cursor:pointer;font-family:'Manrope',sans-serif;transition:border-color .15s,color .15s}
+.btn-back:hover{border-color:var(--accent);color:var(--accent)}
+.revlist{width:100%;max-width:800px;margin:0 auto;padding:24px 20px 60px}
+.ri{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px 20px;margin-bottom:12px;border-left:4px solid var(--border);animation:qin .2s ease}
+.ri.correct{border-left-color:var(--green)}.ri.wrong{border-left-color:var(--red)}.ri.skipped{border-left-color:var(--accent)}
+.ri-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;flex-wrap:wrap;gap:6px}
+.ri-num{font-family:'JetBrains Mono',monospace;font-size:.65rem;color:var(--muted);letter-spacing:1px}
+.ri-badge{font-family:'JetBrains Mono',monospace;font-size:.6rem;letter-spacing:1px;text-transform:uppercase;padding:3px 10px;border-radius:100px}
+.ri-badge.correct{background:rgba(78,203,113,.12);color:var(--green)}.ri-badge.wrong{background:rgba(255,94,94,.12);color:var(--red)}.ri-badge.skipped{background:rgba(247,195,95,.12);color:var(--accent)}
+.ri-q{font-size:.92rem;font-weight:700;margin-bottom:10px;line-height:1.45;color:var(--text)}
+.ri-opts{display:flex;flex-direction:column;gap:5px}
+.rio{display:flex;align-items:center;gap:9px;font-size:.82rem;padding:6px 10px;border-radius:6px;border:1px solid transparent;color:var(--muted)}
+.rio.is-correct-answer{background:rgba(78,203,113,.08);border-color:rgba(78,203,113,.2);color:var(--green)}
+.rio.is-user-wrong{background:rgba(255,94,94,.08);border-color:rgba(255,94,94,.2);color:var(--red)}
+.rio-dot{width:7px;height:7px;border-radius:50%;background:var(--border);flex-shrink:0}
+.rio.is-correct-answer .rio-dot{background:var(--green)}.rio.is-user-wrong .rio-dot{background:var(--red)}
+.rio-tag{font-family:'JetBrains Mono',monospace;font-size:.58rem;font-weight:600;padding:1px 6px;border-radius:3px;margin-left:auto;flex-shrink:0}
+.is-correct-answer .rio-tag{background:var(--green);color:#111}.is-user-wrong .rio-tag{background:var(--red);color:#fff}
+.empty-msg{text-align:center;padding:50px 20px;color:var(--muted);font-family:'JetBrains Mono',monospace;font-size:.8rem}
+</style>
+</head>
+<body>
+<div id="app">
+
+<!-- START -->
+<div id="start-screen" class="screen active">
+  <div class="tag">Assessment · Randomised</div>
+  <h1 class="start-h">Linux &amp; <span>Windows</span><br>Operating Systems</h1>
+  <p class="start-sub">100 questions drawn at random from a bank of 500+ questions. Every visit is a different test. Answers revealed only at the end.</p>
+  <div class="chips">
+    <div class="chip"><b>500+</b>Question Bank</div>
+    <div class="chip"><b>100</b>Per Quiz</div>
+    <div class="chip"><b>25 min</b>Time Limit</div>
+    <div class="chip"><b>55/45</b>Linux / Windows</div>
+  </div>
+  <button class="btn-go" onclick="startQuiz()">Begin Quiz →</button>
+  <p class="hint"><kbd>1</kbd><kbd>2</kbd><kbd>3</kbd><kbd>4</kbd> select &nbsp;·&nbsp; <kbd>Enter</kbd> next &nbsp;·&nbsp; <kbd>S</kbd> skip</p>
+</div>
+
+<!-- QUIZ -->
+<div id="quiz-screen" class="screen">
+  <div class="qbar">
+    <div class="qbar-left">Q <strong id="qnum">1</strong><span style="color:var(--muted)">/100</span></div>
+    <div class="prog-wrap"><div class="prog-fill" id="prog" style="width:0%"></div></div>
+    <div class="timer" id="timer">25:00</div>
+  </div>
+  <div class="qwrap" id="qwrap"></div>
+</div>
+
+<!-- RESULTS -->
+<div id="results-screen" class="screen">
+  <div class="res-box">
+    <div class="score-big" id="score-big">0</div>
+    <div class="score-of">OUT OF 100</div>
+    <div class="grade-text" id="grade-text">—</div>
+    <div class="grade-msg" id="grade-msg">—</div>
+    <div class="res-stats">
+      <div class="rs"><span class="rv g" id="rs-c">0</span><div class="rl">Correct</div></div>
+      <div class="rs"><span class="rv r" id="rs-w">0</span><div class="rl">Wrong</div></div>
+      <div class="rs"><span class="rv y" id="rs-s">0</span><div class="rl">Skipped</div></div>
+    </div>
+    <div class="res-btns">
+      <button class="btn-rev" onclick="showReview()">📋 Review Answers</button>
+      <button class="btn-new" onclick="restartQuiz()">↺ New Random Quiz</button>
+    </div>
+  </div>
+</div>
+
+<!-- REVIEW -->
+<div id="review-screen" class="screen">
+  <div class="revbar">
+    <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+      <button class="btn-back" onclick="showResults()">← Results</button>
+      <h2>Answer Review</h2>
+    </div>
+    <div class="frow">
+      <button class="fb on" onclick="filterRev('all',this)">All</button>
+      <button class="fb" onclick="filterRev('correct',this)">✓ Correct</button>
+      <button class="fb" onclick="filterRev('wrong',this)">✗ Wrong</button>
+      <button class="fb" onclick="filterRev('skipped',this)">– Skipped</button>
+    </div>
+  </div>
+  <div class="revlist" id="revlist"></div>
+</div>
+
+</div><!-- #app -->
+
+<script>
+// ═══════════════════════════════════════════════════════════
+//  QUESTION BANK  (Linux ~55%  Windows ~45%)
+//  Total: 550 questions  →  Linux: ~302  Windows: ~248
+// ═══════════════════════════════════════════════════════════
+const BANK = [
+// ─── LINUX COMMANDS ───────────────────────────────────────
+{c:"linux",q:"What command lists files in the current directory?",o:["dir","ls","list","show"],a:1},
+{c:"linux",q:"Which command shows the current working directory path?",o:["cwd","whereami","pwd","path"],a:2},
+{c:"linux",q:"How do you create a new directory called 'projects'?",o:["newdir projects","mkdir projects","makedir projects","create projects"],a:1},
+{c:"linux",q:"Which command removes an empty directory?",o:["rm -d","delete","rmdir","remove"],a:2},
+{c:"linux",q:"What does `ls -a` do?",o:["Sort by size","List all files including hidden ones","Show access times","List only directories"],a:1},
+{c:"linux",q:"What does `ls -l` display?",o:["Only file names","Files sorted by size","Detailed listing with permissions, owner and size","Hidden files only"],a:2},
+{c:"linux",q:"What command copies a file?",o:["mv","cp","clone","dup"],a:1},
+{c:"linux",q:"What command moves or renames a file?",o:["cp","rn","mv","shift"],a:2},
+{c:"linux",q:"What does `rm -r directory` do?",o:["Renames directory","Removes directory and all contents recursively","Reads directory","Restores directory"],a:1},
+{c:"linux",q:"Which flag makes `cp` copy a directory and its contents?",o:["-d","-R","-a","-c"],a:1},
+{c:"linux",q:"What command displays the contents of a file on screen?",o:["read","show","cat","view"],a:2},
+{c:"linux",q:"What command displays file contents one page at a time?",o:["page","cat","more","scroll"],a:2},
+{c:"linux",q:"What is the difference between `more` and `less`?",o:["No difference","less allows backward navigation","more is faster","less only works on large files"],a:1},
+{c:"linux",q:"What does the `head` command display?",o:["Last 10 lines","First 10 lines","File metadata","Line count"],a:1},
+{c:"linux",q:"What does the `tail` command display?",o:["First 10 lines","File metadata","Last 10 lines","File size"],a:2},
+{c:"linux",q:"How do you display the first 5 lines of a file?",o:["head -n5","head -5","top 5","first 5"],a:1},
+{c:"linux",q:"What does `grep` do?",o:["Compresses files","Searches for patterns in files","Displays file permissions","Renames files"],a:1},
+{c:"linux",q:"What flag makes `grep` ignore case?",o:["-c","-n","-i","-v"],a:2},
+{c:"linux",q:"What does `grep -v pattern file` do?",o:["Shows only matching lines","Counts matching lines","Shows lines that do NOT match","Highlights matches"],a:2},
+{c:"linux",q:"What does `grep -n` add to output?",o:["Colour highlighting","Line numbers","File names","Match counts"],a:1},
+{c:"linux",q:"What does `wc -l` count?",o:["Words","Characters","Lines","Bytes"],a:2},
+{c:"linux",q:"What does `wc -w` count?",o:["Lines","Words","Characters","Files"],a:1},
+{c:"linux",q:"What does `sort` do?",o:["Searches files","Renames files","Sorts input lines alphabetically or numerically","Counts lines"],a:2},
+{c:"linux",q:"What does the `>` operator do?",o:["Appends output to a file","Reads input from a file","Redirects output to a file (overwrites)","Pipes output"],a:2},
+{c:"linux",q:"What does the `>>` operator do?",o:["Overwrites a file","Appends output to an existing file","Redirects errors","Reads a file"],a:1},
+{c:"linux",q:"What does the `<` operator do?",o:["Redirects output","Pipes output","Redirects input from a file","Appends output"],a:2},
+{c:"linux",q:"What does the pipe `|` symbol do?",o:["Appends data","Sends output of one command as input to another","Redirects errors","Creates a file"],a:1},
+{c:"linux",q:"What does `2>` redirect?",o:["Standard input","Standard output","Standard error","Background jobs"],a:2},
+{c:"linux",q:"What command shows who is logged in?",o:["users","logged","who","whoami"],a:2},
+{c:"linux",q:"What does `whoami` return?",o:["Hostname","Current username","Current directory","Shell type"],a:1},
+{c:"linux",q:"What does `chmod` do?",o:["Changes file owner","Changes file permissions","Creates a file","Compresses a file"],a:1},
+{c:"linux",q:"What does `chmod a+rw file` do?",o:["Gives owner read/write","Gives all users read and write","Removes all permissions","Gives execute to all"],a:1},
+{c:"linux",q:"What does `chmod go-rwx file` do?",o:["Removes permissions for group and others","Adds execute for all","Gives group owner access","Removes owner permissions"],a:0},
+{c:"linux",q:"What does `chmod +x script.sh` do?",o:["Removes execute permission","Makes the script executable","Compresses the script","Changes script owner"],a:1},
+{c:"linux",q:"What permission does 'r' represent?",o:["Run","Read","Remove","Redirect"],a:1},
+{c:"linux",q:"What permission does 'w' represent?",o:["Read","Write","Run","Watch"],a:1},
+{c:"linux",q:"What permission does 'x' represent?",o:["Export","Examine","Execute","Extract"],a:2},
+{c:"linux",q:"In `ls -l`, what does a leading 'd' in the permission string mean?",o:["Deleted file","Directory","Device file","Daemon"],a:1},
+{c:"linux",q:"What do the 9 characters after the type character in permissions represent?",o:["File size bytes","User group world permissions","Date modified","Inode numbers"],a:1},
+{c:"linux",q:"What does `ls -lt` do?",o:["Lists hidden files","Sorts by file type","Sorts by modification time","Lists with total size"],a:2},
+{c:"linux",q:"What does `ls -lS` do?",o:["Sorts by name","Sorts by modification time","Sorts by file size","Lists symbolic links"],a:2},
+{c:"linux",q:"What does `cd` with no arguments do?",o:["Goes to root","Goes to last directory","Returns to home directory","Lists current directory"],a:2},
+{c:"linux",q:"What does `cd ~` do?",o:["Goes to root directory","Goes to home directory","Goes up one level","Goes to last visited directory"],a:1},
+{c:"linux",q:"What does `cd ..` do?",o:["Goes to home directory","Goes to root","Moves up one directory level","Creates parent directory"],a:2},
+{c:"linux",q:"What does the `.` directory refer to?",o:["Parent directory","Root directory","Current directory","Hidden directory"],a:2},
+{c:"linux",q:"What does the `..` directory refer to?",o:["Current directory","Parent directory","Root directory","Home directory"],a:1},
+{c:"linux",q:"What symbol represents the home directory?",o:["@","#","~","$"],a:2},
+{c:"linux",q:"What does `touch filename` do?",o:["Opens file for editing","Creates an empty file or updates timestamp","Deletes a file","Changes file permissions"],a:1},
+{c:"linux",q:"What does `find . -name file1` do?",o:["Finds file1 in /etc","Searches recursively from current dir for file1","Renames file1","Deletes file1"],a:1},
+{c:"linux",q:"What does `locate filename` do?",o:["Searches filesystem in real-time","Searches a database of file locations","Locates commands in PATH","Shows file permissions"],a:1},
+{c:"linux",q:"What is an advantage of `locate` over `find`?",o:["More accurate","Finds hidden files","Much faster as it uses a database","Works without root"],a:2},
+{c:"linux",q:"What does `man command` do?",o:["Runs the command as root","Displays the manual page for a command","Opens a text editor","Lists command options briefly"],a:1},
+{c:"linux",q:"What does `whatis command` display?",o:["Full manual page","One-line description of a command","Command source code","Command location"],a:1},
+{c:"linux",q:"What does `which command` show?",o:["Command manual","Command description","Full path to the command executable","Command options"],a:2},
+{c:"linux",q:"What does `echo $HOME` display?",o:["Current directory","Your home directory path","The shell you use","Your username"],a:1},
+{c:"linux",q:"What does `echo $USER` display?",o:["Current directory","System hostname","Current username","Shell version"],a:2},
+{c:"linux",q:"What does `echo $SHELL` show?",o:["Shell version number","The shell currently in use","Available shells","Shell history"],a:1},
+{c:"linux",q:"What does `echo $PATH` show?",o:["Current directory","Home directory","Directories searched for commands","Shell history path"],a:2},
+{c:"linux",q:"What does `env` display?",o:["Error logs","All current environment variables","Executable programs","Network settings"],a:1},
+{c:"linux",q:"How do you set a variable in bash?",o:["set NAME=value","$NAME=value","NAME=value","var NAME=value"],a:2},
+{c:"linux",q:"What does `export VARNAME` do?",o:["Removes the variable","Makes variable available to child processes","Saves variable permanently","Prints the variable"],a:1},
+{c:"linux",q:"What file is edited to make environment variables permanent in bash?",o:[".bash_profile",".bash_history",".bashrc",".profile"],a:2},
+{c:"linux",q:"What does `source ~/.bashrc` do?",o:["Backs up bashrc","Opens bashrc for editing","Reloads bashrc in current shell","Deletes bashrc"],a:2},
+{c:"linux",q:"What does `history` show?",o:["Login history","Previously run commands","File modification history","Network history"],a:1},
+{c:"linux",q:"What does `!!` do in bash?",o:["Runs last command as root","Repeats the last command","Shows last 10 commands","Opens history file"],a:1},
+{c:"linux",q:"What does `!grep` do?",o:["Deletes last grep result","Runs the last command starting with grep","Inverts grep output","Installs grep"],a:1},
+{c:"linux",q:"What does `HISTSIZE=1000` set?",o:["Max file size","Number of commands stored in history","Terminal font size","Max processes"],a:1},
+{c:"linux",q:"What keyboard shortcut searches command history interactively?",o:["Ctrl+H","Ctrl+F","Ctrl+R","Ctrl+S"],a:2},
+{c:"linux",q:"What does `Ctrl+C` do in a terminal?",o:["Copies text","Clears screen","Kills the running foreground process","Pastes text"],a:2},
+{c:"linux",q:"What does `Ctrl+Z` do?",o:["Undo last command","Suspends the foreground process","Exits the shell","Clears the screen"],a:1},
+{c:"linux",q:"What does `Ctrl+D` do?",o:["Deletes a file","Ends of input / logout","Duplicates a line","Opens file manager"],a:1},
+{c:"linux",q:"What does `Ctrl+L` do?",o:["Locks the screen","Lists files","Clears the terminal screen","Shows last command"],a:2},
+{c:"linux",q:"What does `Ctrl+A` do in bash?",o:["Selects all","Jumps to start of line","Opens a new terminal","Saves file"],a:1},
+{c:"linux",q:"What does `Ctrl+E` do in bash?",o:["Exits shell","Edits last command","Jumps to end of line","Opens text editor"],a:2},
+{c:"linux",q:"What does `Ctrl+K` do in bash?",o:["Kills process","Deletes everything from cursor to end of line","Copies line","Shows keybindings"],a:1},
+{c:"linux",q:"What does the Tab key do in bash?",o:["Opens a new tab","Inserts a tab character","Auto-completes command or filename","Switches terminal windows"],a:2},
+{c:"linux",q:"What does `ps` show?",o:["Disk partitions","Current running processes","Process scheduler","Post-script files"],a:1},
+{c:"linux",q:"What does `ps aux` show?",o:["System audio","All processes for all users with details","Process audit log","CPU usage only"],a:1},
+{c:"linux",q:"What is a PID?",o:["Partition ID","Program Installation Directory","Unique process identifier number","Parallel Input Device"],a:2},
+{c:"linux",q:"What does `kill %1` do?",o:["Kills process with PID 1","Kills job number 1","Kills all jobs","Kills the shell"],a:1},
+{c:"linux",q:"What does `kill -9 PID` do?",o:["Gracefully stops process","Force kills the process","Pauses the process","Restarts the process"],a:1},
+{c:"linux",q:"What does `fg` do?",o:["Lists background jobs","Brings most recent background job to foreground","Runs command in background","Finds a file"],a:1},
+{c:"linux",q:"What does `bg` do?",o:["Backgrounds a stopped job","Brings job to foreground","Shows background tasks","Blocks a process"],a:0},
+{c:"linux",q:"What does `jobs` show?",o:["Running daemons","Current shell jobs list","Job scheduler queue","System services"],a:1},
+{c:"linux",q:"What does appending `&` to a command do?",o:["Runs as root","Runs command in background","Concatenates output","Pipes to another command"],a:1},
+{c:"linux",q:"What does `gzip science.txt` do?",o:["Encrypts the file","Deletes the file","Compresses the file creating science.txt.gz","Splits the file"],a:2},
+{c:"linux",q:"What does `gunzip file.gz` do?",o:["Creates a gzip file","Decompresses a gzip file","Tests gzip integrity","Lists gzip contents"],a:1},
+{c:"linux",q:"What does `tar -xvf archive.tar` do?",o:["Creates a tar archive","Compresses with gzip","Extracts a tar archive verbosely","Lists tar contents"],a:2},
+{c:"linux",q:"What does the `-z` flag add to a tar command?",o:["Verbose output","Extracts in place","Compresses/decompresses with gzip","Creates new archive"],a:2},
+{c:"linux",q:"What does `tar -czf archive.tar.gz folder/` do?",o:["Extracts archive","Creates gzip-compressed tar archive","Lists archive contents","Tests archive"],a:1},
+{c:"linux",q:"What does `df` report?",o:["Directory files","Disk filesystem space usage","Default file permissions","Data format"],a:1},
+{c:"linux",q:"What does `df -h` add?",o:["Shows hidden files","Displays sizes in human-readable format","Shows hard links","Hostname display"],a:1},
+{c:"linux",q:"What does `du` show?",o:["Disk usage of directories","Duplicate file list","Domain user information","Download utility"],a:0},
+{c:"linux",q:"What does `du -sh *` display?",o:["Hidden files","Summary of disk usage for each item in human-readable format","Disk usage in bytes","System hardware info"],a:1},
+{c:"linux",q:"What does `wget URL` do?",o:["Opens a web browser","Downloads a file from URL","Tests network speed","Checks URL availability"],a:1},
+{c:"linux",q:"What does `ping host` do?",o:["Downloads from host","Tests network connectivity to host","Logs in to host","Traces route to host"],a:1},
+{c:"linux",q:"What does `clear` do?",o:["Clears file contents","Clears the terminal screen","Clears clipboard","Removes temp files"],a:1},
+{c:"linux",q:"What does `file filename` do?",o:["Creates a file","Shows file size","Classifies file type based on content","Changes file name"],a:2},
+{c:"linux",q:"What does `ln -s file link` create?",o:["Hard link","Backup file","Symbolic (soft) link","Compressed copy"],a:2},
+{c:"linux",q:"What does `quota` or `quotacheck` show?",o:["File counts","Disk quota usage","Queue of print jobs","Network quota"],a:1},
+{c:"linux",q:"What wildcard matches any number of characters?",o:["?","[]","*","{},"],a:2},
+{c:"linux",q:"What wildcard matches exactly one character?",o:["*","?","[]","#"],a:1},
+{c:"linux",q:"What does `ls list*` match?",o:["Files ending in 'list'","Files containing 'list'","Files starting with 'list'","All files"],a:2},
+{c:"linux",q:"What does `ls ?ouse` match?",o:["Any file ending in ouse","Files like 'house' and 'mouse' with exactly one leading char","Files starting with o-u-s-e","All 5-letter files"],a:1},
+{c:"linux",q:"What does `mkdir newdir{1,2,3}` do?",o:["Creates one directory","Creates directories newdir1 newdir2 newdir3","Renames a directory","Lists directories"],a:1},
+{c:"linux",q:"What does `cat file1 file2 > file3` do?",o:["Compares two files","Concatenates file1 and file2 into file3","Copies file1 to file3","Deletes file2"],a:1},
+{c:"linux",q:"What does `echo 'kiwi' >> list` do?",o:["Overwrites list with kiwi","Appends kiwi to list","Creates a new file","Searches list for kiwi"],a:1},
+{c:"linux",q:"What does `echo 'text' > file` do when file exists?",o:["Appends to file","Creates a backup","Overwrites file with 'text'","Does nothing"],a:2},
+{c:"linux",q:"What does `sort < biglist` do?",o:["Writes sorted output to biglist","Reads biglist and outputs sorted content","Deletes sorted lines","Counts lines in biglist"],a:1},
+{c:"linux",q:"What does `who | wc -l` tell you?",o:["Number of files","Number of logged-in users","Number of processes","Number of lines in a file"],a:1},
+{c:"linux",q:"What does `grep -c` do?",o:["Colours matches","Counts matching lines","Shows context","Recursive search"],a:1},
+{c:"linux",q:"What does `grep -r pattern dir` do?",o:["Renames files matching pattern","Searches recursively in directory","Removes matching lines","Replaces pattern"],a:1},
+{c:"linux",q:"What does `grep --color` do?",o:["Saves output with colour codes","Highlights matching text in colour","Searches colour values","Changes terminal colour"],a:1},
+{c:"linux",q:"What is STDIN?",o:["Standard error","Standard output","Standard input (usually keyboard)","System terminal input"],a:2},
+{c:"linux",q:"What is STDOUT?",o:["Standard error","Standard input","Standard output (usually terminal screen)","System terminal output"],a:2},
+{c:"linux",q:"What is STDERR?",o:["Standard input","Standard terminal","Standard error output","Secure terminal error"],a:2},
+
+// ─── LINUX SCRIPTING & ADVANCED ───────────────────────────
+{c:"linux",q:"What is a shell script?",o:["A compressed file","A list of commands to run in sequence","A type of file permission","A background process"],a:1},
+{c:"linux",q:"What is the shebang line in a shell script?",o:["A comment line","A variable declaration","The first line specifying which interpreter to use","A function definition"],a:2},
+{c:"linux",q:"What is the correct shebang for a bash script?",o:["#/bin/bash","#!/bin/bash","//bin/bash","#!bash"],a:1},
+{c:"linux",q:"How do you make a script executable?",o:["chmod +x script.sh","run script.sh","exec script.sh","bash +x script.sh"],a:0},
+{c:"linux",q:"How do you run a script in current directory?",o:["script.sh","run script.sh","./script.sh","bash run script.sh"],a:2},
+{c:"linux",q:"What prefix do variables need when referenced in bash?",o:["#","@","$","&"],a:2},
+{c:"linux",q:"What keyword begins a for loop in bash?",o:["loop","foreach","for","iterate"],a:2},
+{c:"linux",q:"What keyword ends a for loop body in bash?",o:["end","fi","endfor","done"],a:3},
+{c:"linux",q:"What does `for i in {1..10}` do?",o:["Creates 10 files","Loops i from 1 to 10","Prints numbers 1 to 10","Deletes 10 items"],a:1},
+{c:"linux",q:"What keyword ends an if statement in bash?",o:["end","endif","fi","done"],a:2},
+{c:"linux",q:"What does `-gt` mean in a bash if condition?",o:["Greater than or equal","Less than","Greater than","Not equal"],a:2},
+{c:"linux",q:"What does `-eq` mean in a bash if condition?",o:["Not equal","Greater than","Less than","Equal to"],a:3},
+{c:"linux",q:"What does `-lt` mean in a bash if condition?",o:["Less than or equal","Greater than","Less than","Not equal"],a:2},
+{c:"linux",q:"What does `$(command)` do in a script?",o:["Comments the command","Runs command and captures output","Exports the command","Quotes the command"],a:1},
+{c:"linux",q:"What does `seq 0 0.5 4` generate?",o:["Numbers 0 to 4 in steps of 0.5","Random numbers","Integers 0 to 4","A 4-item sequence"],a:0},
+{c:"linux",q:"What does `export PATH=$PATH:~/bin` do?",o:["Overwrites PATH","Removes ~/bin from PATH","Adds ~/bin to the end of PATH","Prints PATH"],a:2},
+{c:"linux",q:"What is the purpose of `./configure` when building software?",o:["Compiles source code","Installs binary","Configures the package for the system creating Makefile","Sets environment variables"],a:2},
+{c:"linux",q:"What does `make` do in software compilation?",o:["Creates a directory","Compiles source code using Makefile rules","Installs packages","Configures the build"],a:1},
+{c:"linux",q:"What does `make install` do?",o:["Compiles the software","Configures the software","Installs compiled software to the system","Tests the software"],a:2},
+{c:"linux",q:"What does `make check` do?",o:["Checks Makefile syntax","Runs self-tests included with the package","Checks disk space","Verifies installation"],a:1},
+{c:"linux",q:"What does `strip binaryfile` do?",o:["Removes file extension","Strips debugging info to reduce binary size","Changes binary permissions","Splits binary into parts"],a:1},
+{c:"linux",q:"What does `./configure --prefix=$HOME/dir` do?",o:["Installs globally","Sets installation location to HOME/dir","Configures PATH","Tests the build"],a:1},
+{c:"linux",q:"What does `tar -zxvf units.tar.gz` do?",o:["Creates archive","Lists archive contents","Extracts gzip tar archive verbosely","Compresses directory"],a:2},
+{c:"linux",q:"What is a tarball?",o:["A compressed executable","A tar file optionally compressed (e.g. .tar.gz)","A type of hard drive","A bash variable"],a:1},
+{c:"linux",q:"What does `nano filename` do?",o:["Deletes the file","Opens file in nano text editor","Prints file to screen","Searches file"],a:1},
+{c:"linux",q:"What key saves a file in nano?",o:["Ctrl+S","Ctrl+W","Ctrl+O","Ctrl+X"],a:2},
+{c:"linux",q:"What key exits nano?",o:["Ctrl+O","Ctrl+X","Ctrl+Q","Ctrl+E"],a:1},
+{c:"linux",q:"What does `gedit filename` do?",o:["Runs the file","Compresses the file","Opens the file in gedit graphical editor","Prints the file"],a:2},
+{c:"linux",q:"What is SSH used for?",o:["File compression","Secure remote login to another machine","Disk scheduling","System health checks"],a:1},
+{c:"linux",q:"What does `info --file=units.info` do?",o:["Installs units","Lists file info","Displays GNU info documentation for units","Searches for units"],a:2},
+{c:"linux",q:"What does `sleep 10 &` do?",o:["Waits 10 seconds then exits shell","Runs sleep 10 in background","Pauses the terminal for 10 seconds","Kills process after 10 seconds"],a:1},
+{c:"linux",q:"What does `fg %1` do?",o:["Kills job 1","Lists job 1","Brings job 1 to the foreground","Freezes job 1"],a:2},
+{c:"linux",q:"What does `kill %4` do?",o:["Kills process with PID 4","Kills job number 4","Kills all jobs","Pauses job 4"],a:1},
+{c:"linux",q:"What does `top` show?",o:["Top 10 files","Realtime view of running processes and resource usage","Network top connections","Top commands used"],a:1},
+{c:"linux",q:"What does `uname -a` display?",o:["Username","Uptime","Full kernel and system information","Network adapters"],a:2},
+{c:"linux",q:"What does `cat /etc/passwd` show?",o:["Encrypted passwords","User account information","Network config","System log"],a:1},
+{c:"linux",q:"What does the root user represent in Linux?",o:["A regular user","Guest account","Superuser with full system privileges","A service account"],a:2},
+{c:"linux",q:"What does `sudo command` do?",o:["Runs as guest","Runs command with superuser privileges","Suspends command","Saves command output"],a:1},
+{c:"linux",q:"What is bash?",o:["A type of file","A Linux graphical interface","Bourne Again Shell - a command interpreter","A text editor"],a:2},
+{c:"linux",q:"What does `ls -lrt` do?",o:["Lists by size descending","Lists by modification time oldest first","Lists reverse alphabetical","Lists symbolic links"],a:1},
+{c:"linux",q:"What does `grep -ivc science file.txt` count?",o:["Lines with science","Lines matching science","Lines NOT containing science (case-insensitive)","Words matching science"],a:2},
+{c:"linux",q:"In Linux permissions, what does the middle group of 3 characters represent?",o:["Owner permissions","Group permissions","Others permissions","Sticky bit"],a:1},
+{c:"linux",q:"What does `chmod 755 file` set?",o:["Full permissions for all","rwx for owner r-x for group and others","Read-only for all","Write-only for owner"],a:1},
+{c:"linux",q:"What does `chmod 644 file` set?",o:["rwx for all","Execute only","rw for owner r-- for group and others","No permissions"],a:2},
+{c:"linux",q:"What does `chown user file` do?",o:["Changes file permissions","Changes file timestamp","Changes the file owner","Changes group"],a:2},
+{c:"linux",q:"What does `free` display?",o:["Free disk space","Free memory and swap usage","Free inodes","Available processes"],a:1},
+{c:"linux",q:"What does `uptime` show?",o:["File modification times","How long the system has been running","CPU uptime only","Network uptime"],a:1},
+{c:"linux",q:"What does `cal` display?",o:["Calculator","Current month's calendar","Call log","System call list"],a:1},
+{c:"linux",q:"What does `date` display?",o:["File date","Current date and time","Date of last login","Creation date of OS"],a:1},
+{c:"linux",q:"What does `hostname` show?",o:["Username","IP address","Computer's network name","Shell name"],a:2},
+{c:"linux",q:"What does `ifconfig` or `ip addr` show?",o:["Installed packages","Network interface configuration","Input/output config","Installed fonts"],a:1},
+{c:"linux",q:"What does `traceroute host` do?",o:["Downloads from host","Traces the network path to host","Tests host speed","Logs into host"],a:1},
+{c:"linux",q:"What does `df -i` show?",o:["Disk space in GB","Inode usage","Input/output stats","File counts"],a:1},
+{c:"linux",q:"What does `lsblk` show?",o:["Listed bash commands","Block device (disk) information","Log of blocked IPs","List of background tasks"],a:1},
+{c:"linux",q:"What does `mount` do?",o:["Mounts a display","Attaches a filesystem to the directory tree","Shows disk usage","Manages processes"],a:1},
+{c:"linux",q:"What is /etc in Linux?",o:["Executable files","User home directories","System configuration files","External devices"],a:2},
+{c:"linux",q:"What is /home in Linux?",o:["System binaries","Configuration files","User home directories","Kernel modules"],a:2},
+{c:"linux",q:"What is /var in Linux?",o:["Variable-length files","System binaries","Boot files","Variable data like logs and spools"],a:3},
+{c:"linux",q:"What is /tmp in Linux?",o:["Templates directory","Trusted binaries","Temporary files cleared on reboot","System tools"],a:2},
+{c:"linux",q:"What is /bin in Linux?",o:["Binary configuration","Essential user command binaries","Backup files","Boot information"],a:1},
+{c:"linux",q:"What is the root filesystem path in Linux?",o:["/home","/root","/ (slash)","//root"],a:2},
+{c:"linux",q:"What does `crontab -e` do?",o:["Edits cron job schedule","Exports crontab","Clears all cron jobs","Runs cron manually"],a:0},
+{c:"linux",q:"What is a cron job?",o:["A background process","A scheduled task that runs automatically","A type of file","A bash variable"],a:1},
+{c:"linux",q:"What does `passwd` do?",o:["Shows password policy","Displays password file","Changes user password","Prints asterisks"],a:2},
+{c:"linux",q:"What does `adduser username` do?",o:["Adds a group","Adds a new user account","Adds to sudoers","Adds a directory"],a:1},
+{c:"linux",q:"What does `su username` do?",o:["Shows user info","Suspends user","Switches to another user account","Sudo user"],a:2},
+{c:"linux",q:"What does `logout` or `exit` do in a shell?",o:["Reboots system","Logs out of current session","Exits a running application","Removes user"],a:1},
+{c:"linux",q:"What does `reboot` do?",o:["Reboots the kernel only","Restarts the computer","Reloads bash config","Restarts a service"],a:1},
+{c:"linux",q:"What does `shutdown -h now` do?",o:["Reboots immediately","Shuts down and halts immediately","Schedules shutdown","Hibernates"],a:1},
+{c:"linux",q:"What does `alias ll='ls -la'` do?",o:["Deletes ll command","Creates shortcut ll for ls -la","Renames ls","Exports ll"],a:1},
+{c:"linux",q:"What command shows all installed packages on Debian/Ubuntu?",o:["pkg list","rpm -qa","dpkg -l","apt show"],a:2},
+{c:"linux",q:"What does `apt-get install package` do?",o:["Removes a package","Searches for package","Installs a package on Debian/Ubuntu","Updates package list only"],a:2},
+{c:"linux",q:"What does `apt-get update` do?",o:["Updates all packages","Updates package list from repositories","Upgrades the OS","Fixes broken packages"],a:1},
+{c:"linux",q:"What does `rpm -qa` do on RedHat/CentOS?",o:["Removes all packages","Queries all installed packages","Upgrades all packages","Adds a package"],a:1},
+{c:"linux",q:"What does `yum install package` do?",o:["Removes package","Updates package","Installs package on RedHat/CentOS systems","Searches package"],a:2},
+{c:"linux",q:"What is a symbolic link?",o:["A hard copy of a file","A pointer or shortcut to another file or directory","A compressed file","A read-only file"],a:1},
+{c:"linux",q:"What does `readlink -f symlink` show?",o:["Contents of symlink","Target path of symbolic link","Symlink permissions","Symlink size"],a:1},
+{c:"linux",q:"What does `diff file1 file2` do?",o:["Deletes differences","Merges two files","Shows differences between two files","Duplicates a file"],a:2},
+{c:"linux",q:"What does `cut -d: -f1 /etc/passwd` do?",o:["Cuts file in half","Extracts first field using : as delimiter","Deletes first line","Counts colons"],a:1},
+{c:"linux",q:"What does `awk '{print $1}' file` do?",o:["Counts fields","Deletes first column","Prints first field of each line","Renames file"],a:2},
+{c:"linux",q:"What does `sed 's/old/new/g' file` do?",o:["Removes old lines","Counts old occurrences","Replaces all occurrences of old with new","Searches for old"],a:2},
+{c:"linux",q:"What does `xargs` do?",o:["Archives files","Executes commands using piped input as arguments","Exports arguments","Extracts archives"],a:1},
+{c:"linux",q:"What does `tee file` do?",o:["Shows two files","Copies input to both stdout and a file simultaneously","Tests file equality","Times execution"],a:1},
+{c:"linux",q:"What does `cat /proc/cpuinfo` display?",o:["CPU temperature","CPU usage","Detailed CPU information","CPU error log"],a:2},
+{c:"linux",q:"What does `cat /proc/meminfo` show?",o:["Memory errors","Memory usage statistics","Memory map","Memory modules"],a:1},
+{c:"linux",q:"What is `/dev/null` used for?",o:["Null-terminated strings","Device drivers","Discarding output (black hole)","Development files"],a:2},
+{c:"linux",q:"What does `wc -m` count?",o:["Lines","Words","Characters/bytes","Matches"],a:2},
+{c:"linux",q:"What does `grep -l pattern dir/*` do?",o:["Lists matching lines","Lists filenames that contain the pattern","Counts matches","Deletes matching files"],a:1},
+{c:"linux",q:"What does `uniq` do?",o:["Shows unique permissions","Removes duplicate adjacent lines from sorted input","Shows unique users","Counts unique words"],a:1},
+{c:"linux",q:"What does `tr 'a-z' 'A-Z'` do?",o:["Translates between languages","Translates lowercase to uppercase","Trims whitespace","Truncates files"],a:1},
+{c:"linux",q:"What does `head -20 file | tail -10` do?",o:["First 10 lines","Last 20 lines","Lines 11-20 (last 10 of first 20)","First 10 of last 20"],a:2},
+{c:"linux",q:"What does `nohup command &` do?",o:["Runs command on schedule","Runs command immune to hangup signals in background","Runs command as root","Hides command output"],a:1},
+{c:"linux",q:"What does `at 10:00` do?",o:["Shows time","Runs commands scheduled for 10:00","Sets system time","Opens time editor"],a:1},
+{c:"linux",q:"What is the purpose of `/etc/fstab`?",o:["User accounts","Filesystem mount configuration","Network settings","Boot loader config"],a:1},
+{c:"linux",q:"What does `fsck` do?",o:["Fast compression","Font configuration","Filesystem check and repair","File security check"],a:2},
+{c:"linux",q:"What does `strace command` do?",o:["Traces network","Traces system calls made by command","Shows stack trace","Streams trace output"],a:1},
+{c:"linux",q:"What does `ldd binary` show?",o:["Binary size","Binary permissions","Shared library dependencies","Load device drivers"],a:2},
+{c:"linux",q:"What is the difference between a hard link and a symbolic link?",o:["No difference","Hard link points to inode directly; symbolic link points to path","Hard links work across filesystems","Symbolic links are faster"],a:1},
+{c:"linux",q:"What does `chmod 777 file` do?",o:["No permissions","Read-only for all","Full rwx permissions for everyone","Execute only"],a:2},
+{c:"linux",q:"What does `umask` control?",o:["File encryption","Default permissions removed from newly created files","User mask login","Unmount settings"],a:1},
+{c:"linux",q:"What does `nice -n 10 command` do?",o:["Runs politely without output","Runs command with lower priority (niceness 10)","Runs command 10 times","Runs nicely formatted output"],a:1},
+{c:"linux",q:"What does `last` show?",o:["Last modified files","Last login history","Last system error","Last installed package"],a:1},
+{c:"linux",q:"What does `w` command show?",o:["Disk write speed","Who is logged in and what they are doing","Write permissions","Warning messages"],a:1},
+{c:"linux",q:"What does `netstat -tuln` show?",o:["Network test results","Active network connections and listening ports","Network statistics table","Network tunnel list"],a:1},
+
+// ─── WINDOWS OS ───────────────────────────────────────────
+{c:"windows",q:"What is the default file manager in Windows?",o:["Finder","File Explorer","Windows Manager","My Computer"],a:1},
+{c:"windows",q:"Which key opens the Start Menu in Windows?",o:["Ctrl","Alt","Windows key (⊞)","Shift"],a:2},
+{c:"windows",q:"What command opens Command Prompt via Run dialog?",o:["cmd.exe","terminal","shell","bash.exe"],a:0},
+{c:"windows",q:"What shortcut opens the Run dialog in Windows?",o:["Ctrl+R","Windows+R","Alt+R","Shift+R"],a:1},
+{c:"windows",q:"What Windows tool manages running processes?",o:["System Monitor","Resource Manager","Task Manager","Control Panel"],a:2},
+{c:"windows",q:"What shortcut opens Task Manager directly?",o:["Ctrl+Alt+Del","Ctrl+Shift+Esc","Windows+T","Alt+F4"],a:1},
+{c:"windows",q:"What is the Windows equivalent of Linux's `ls`?",o:["list","show","dir","files"],a:2},
+{c:"windows",q:"What command clears the Command Prompt screen?",o:["clear","clr","cls","reset"],a:2},
+{c:"windows",q:"What Windows command deletes a file?",o:["erase / del","remove","wipe","trash"],a:0},
+{c:"windows",q:"What Windows command copies files?",o:["move","transfer","copy","duplicate"],a:2},
+{c:"windows",q:"What does `xcopy` do in Windows?",o:["Cross-copies to network","Extended copy supporting directories and attributes","Deletes files","Compares files"],a:1},
+{c:"windows",q:"What does `robocopy` do?",o:["Renames files","Robust file copy supporting restartable transfers","Removes files","Reorganises folders"],a:1},
+{c:"windows",q:"What does `ipconfig` do?",o:["Configures IP routing tables","Displays IP configuration of network interfaces","Resets network settings","Pings a host"],a:1},
+{c:"windows",q:"What does `ipconfig /flushdns` do?",o:["Shows DNS servers","Flushes the DNS resolver cache","Resets IP address","Disables DNS"],a:1},
+{c:"windows",q:"What does `ipconfig /all` show?",o:["Active connections","Detailed network adapter configuration","All open ports","All network drives"],a:1},
+{c:"windows",q:"What is the Windows Registry?",o:["A list of installed programs","A hierarchical database of OS and application settings","A hardware inventory","A list of users"],a:1},
+{c:"windows",q:"What command opens the Registry Editor?",o:["regdit","regedit","registry","regedt32"],a:1},
+{c:"windows",q:"What does `ping` test in Windows?",o:["Hard drive speed","Network connectivity to a host","RAM usage","CPU performance"],a:1},
+{c:"windows",q:"What does `ping -t host` do?",o:["Pings once","Pings with timeout","Pings continuously until stopped","Traces route"],a:2},
+{c:"windows",q:"What does `tracert host` do?",o:["Tests connection speed","Traces the route packets take to host","Downloads from host","Lists connected hosts"],a:1},
+{c:"windows",q:"What does `nslookup domain` do?",o:["Lists DNS servers","Queries DNS for domain information","Shows network statistics","Pings a domain"],a:1},
+{c:"windows",q:"What does `netstat` show?",o:["Network statistics and active connections","Network speed","DNS settings","Wi-Fi passwords"],a:0},
+{c:"windows",q:"What does `netstat -an` add?",o:["Shows application names","Shows all connections and listening ports in numeric form","Shows network adapters","Shows network errors"],a:1},
+{c:"windows",q:"Where are environment variables managed in Windows?",o:["Task Manager","Disk Management","System Properties → Advanced → Environment Variables","Registry only"],a:2},
+{c:"windows",q:"What is the Windows equivalent of Linux's /home?",o:["C:\\Windows","C:\\Program Files","C:\\Users","C:\\System32"],a:2},
+{c:"windows",q:"What file system does Windows use by default on modern drives?",o:["FAT32","ext4","NTFS","exFAT"],a:2},
+{c:"windows",q:"What is FAT32 limited by compared to NTFS?",o:["Smaller disk support","Maximum 4GB file size","No folder support","No permissions"],a:1},
+{c:"windows",q:"What does NTFS stand for?",o:["New Terminal File System","Network Transfer File System","New Technology File System","Native Terminal File System"],a:2},
+{c:"windows",q:"What is PowerShell?",o:["A graphics tool","A task scheduler","A command-line shell and scripting language for Windows","A file compression tool"],a:2},
+{c:"windows",q:"What does UAC stand for?",o:["User Access Code","Universal Application Control","User Account Control","Unified Admin Console"],a:2},
+{c:"windows",q:"What does UAC do?",o:["Manages passwords","Controls internet access","Prompts for permission when admin rights are needed","Manages account lockouts"],a:2},
+{c:"windows",q:"Which component manages hardware drivers in Windows?",o:["Task Manager","Device Manager","Disk Management","Control Panel"],a:1},
+{c:"windows",q:"What does `sfc /scannow` do?",o:["Scans for viruses","Checks and repairs corrupted system files","Scans for disk errors","Scans network"],a:1},
+{c:"windows",q:"What does `chkdsk` do?",o:["Checks disk space only","Checks and repairs file system errors and bad sectors","Checks disk drivers","Changes disk format"],a:1},
+{c:"windows",q:"What does `chkdsk /f` do?",o:["Fast scan only","Fixes errors on the disk","Formats the disk","Shows file count"],a:1},
+{c:"windows",q:"What does `msconfig` open?",o:["Microsoft Configuration Manager","System Configuration utility (startup, boot, services)","Network configuration","Disk management"],a:1},
+{c:"windows",q:"What does the `tree` command do in Windows?",o:["Opens file manager","Displays a graphical folder structure","Lists running processes","Shows installed programs"],a:1},
+{c:"windows",q:"What does `attrib` do in Windows?",o:["Attributes user accounts","Displays or changes file attributes (read-only, hidden etc)","Attaches drives","Shows file sizes"],a:1},
+{c:"windows",q:"What does `tasklist` show?",o:["Scheduled tasks","Currently running processes","Task Manager history","Background services"],a:1},
+{c:"windows",q:"What does `taskkill /PID 1234` do?",o:["Lists task 1234","Schedules task 1234 to stop","Terminates process with PID 1234","Pauses task 1234"],a:2},
+{c:"windows",q:"What does `net user` do?",o:["Shows network users","Manages local user accounts","Shows active network","Tests network"],a:1},
+{c:"windows",q:"What does `net start ServiceName` do?",o:["Lists services","Stops a service","Starts a Windows service","Installs a service"],a:2},
+{c:"windows",q:"What does `sc query` do?",o:["Shows disk quota","Queries status of Windows services","Scans for changes","Shows security certificates"],a:1},
+{c:"windows",q:"What does `diskpart` do?",o:["Checks disk health","Displays partition info","Command-line disk partition management tool","Defragments disk"],a:2},
+{c:"windows",q:"What does `format C:` do?",o:["Shows C: info","Formats (erases) the C: drive","Defragments C:","Scans C:"],a:1},
+{c:"windows",q:"What does `defrag C:` do?",o:["Formats the drive","Defragments the C: drive to improve performance","Deletes fragmented files","Detects fragments"],a:1},
+{c:"windows",q:"What does `winver` show?",o:["Wireless version","Windows version and build number","Wine version","Winsock version"],a:1},
+{c:"windows",q:"What does `systeminfo` display?",o:["System file list","Detailed system configuration including OS version, RAM and patches","Startup programs","Running services"],a:1},
+{c:"windows",q:"What does `dxdiag` do?",o:["Diagnoses DX errors","DirectX diagnostic tool showing hardware and driver info","Disk analysis","Domain XML diagnosis"],a:1},
+{c:"windows",q:"What does the Recycle Bin do?",o:["Permanently deletes immediately","Stores deleted files temporarily before permanent removal","Compresses unused files","Archives old files"],a:1},
+{c:"windows",q:"How do you permanently delete without Recycle Bin?",o:["Ctrl+D","Alt+Delete","Shift+Delete","Windows+D"],a:2},
+{c:"windows",q:"What shortcut copies in Windows?",o:["Ctrl+X","Ctrl+V","Ctrl+C","Ctrl+Z"],a:2},
+{c:"windows",q:"What shortcut pastes in Windows?",o:["Ctrl+C","Ctrl+X","Ctrl+Z","Ctrl+V"],a:3},
+{c:"windows",q:"What shortcut cuts in Windows?",o:["Ctrl+C","Ctrl+X","Ctrl+V","Ctrl+Z"],a:1},
+{c:"windows",q:"What shortcut undoes in Windows?",o:["Ctrl+Y","Ctrl+X","Ctrl+Z","Ctrl+U"],a:2},
+{c:"windows",q:"What does `Windows + D` do?",o:["Opens Documents","Shows/hides desktop","Opens Drive manager","Downloads folder"],a:1},
+{c:"windows",q:"What does `Windows + E` do?",o:["Opens Edge browser","Opens File Explorer","Opens Events viewer","Opens Ease of Access"],a:1},
+{c:"windows",q:"What does `Windows + L` do?",o:["Opens Lock settings","Locks the computer","Opens Libraries","Lists drives"],a:1},
+{c:"windows",q:"What does `Windows + I` do?",o:["Opens Internet Explorer","Opens Internet settings","Opens Settings app","Opens Ink workspace"],a:2},
+{c:"windows",q:"What does `Alt + F4` do?",o:["Fullscreen","Opens File menu","Closes current application","Force quits all apps"],a:2},
+{c:"windows",q:"What does `Alt + Tab` do?",o:["Opens new tab","Switches between open applications","Opens task bar","Aligns windows"],a:1},
+{c:"windows",q:"What does `Windows + Tab` do?",o:["Same as Alt+Tab","Opens Task View showing all open windows","Switches desktops","Opens Taskbar settings"],a:1},
+{c:"windows",q:"What is the BCD in Windows?",o:["Binary Code Directory","Boot Configuration Data","Basic Control Database","Boot Command Data"],a:1},
+{c:"windows",q:"What does `bcdedit` do?",o:["Backs up code","Manages boot configuration data","Binary code editor","Block device editor"],a:1},
+{c:"windows",q:"What does `bootrec /fixmbr` do?",o:["Creates new MBR backup","Repairs the Master Boot Record","Boots to recovery","Fixes missing boot record entry"],a:1},
+{c:"windows",q:"What is BSOD?",o:["Basic System Output Display","Blue Screen of Death - critical system error","Boot Sector On Disk","Backup System On Demand"],a:1},
+{c:"windows",q:"What does the Windows Event Viewer show?",o:["Scheduled events","System and application logs and error events","Calendar events","Network events"],a:1},
+{c:"windows",q:"What does `eventvwr` open?",o:["Event Viewer","Environment variables","Error version report","Event scheduler"],a:0},
+{c:"windows",q:"What is the Windows Task Scheduler used for?",o:["Managing processes","Automating tasks at specific times or events","Manual update scheduling","Monitoring CPU"],a:1},
+{c:"windows",q:"What does `%TEMP%` refer to?",o:["Temperature sensor variable","Temporary files folder","Template directory","Terminal path"],a:1},
+{c:"windows",q:"What does `%WINDIR%` refer to?",o:["Window size","Windows installation directory","Windows user directory","Windows drive letter"],a:1},
+{c:"windows",q:"What does `%USERPROFILE%` refer to?",o:["Username variable","Current user's profile folder path","User permissions profile","Unix profile"],a:1},
+{c:"windows",q:"What does `set` do in Windows Command Prompt?",o:["Sets file permissions","Displays or sets environment variables","Sets disk quotas","Sets time"],a:1},
+{c:"windows",q:"What does `setx VARNAME value` do?",o:["Sets variable for current session","Permanently sets user environment variable","Sets system time","Sets file extension"],a:1},
+{c:"windows",q:"What is Windows Defender?",o:["A firewall only","Built-in antivirus and security tool","A VPN service","A password manager"],a:1},
+{c:"windows",q:"What does the Windows Firewall do?",o:["Speeds up network","Manages screen brightness","Controls network traffic based on rules","Monitors disk health"],a:2},
+{c:"windows",q:"What does `wf.msc` open?",o:["Wireless features","Windows Firewall with Advanced Security","Windows font manager","WiFi manager"],a:1},
+{c:"windows",q:"What is BitLocker?",o:["A file compression tool","Windows drive encryption feature","A backup tool","A partition manager"],a:1},
+{c:"windows",q:"What does `cipher /e file` do?",o:["Checks encryption","Encrypts a file using EFS","Removes cipher","Shows cipher key"],a:1},
+{c:"windows",q:"What is Windows Update used for?",o:["Updating user profiles","Downloading patches, security fixes and feature updates","Updating installed apps only","Updating BIOS"],a:1},
+{c:"windows",q:"What command runs Windows Update from CMD?",o:["wuapp","wuauclt /detectnow","windowsupdate","update /run"],a:1},
+{c:"windows",q:"What does `dism /online /cleanup-image /restorehealth` do?",o:["Defragments system","Repairs Windows system image using Windows Update","Removes installed features","Checks disk"],a:1},
+{c:"windows",q:"What is a Windows service?",o:["A subscription plan","A background process that runs automatically","A user account type","A disk partition"],a:1},
+{c:"windows",q:"What does `services.msc` open?",o:["Service configuration","Windows Services management console","Shared folders","Security settings"],a:1},
+{c:"windows",q:"What does `compmgmt.msc` open?",o:["Component management","Computer Management console","COM port settings","Compatibility manager"],a:1},
+{c:"windows",q:"What does `diskmgmt.msc` open?",o:["Disk metrics","Disk Management tool","Display management","Driver management"],a:1},
+{c:"windows",q:"What does `devmgmt.msc` open?",o:["Development management","Device Manager","DEV metrics","Domain environment viewer"],a:1},
+{c:"windows",q:"What does Control Panel allow you to do?",o:["Only manage hardware","Configure system settings and features","Only install software","Only manage users"],a:1},
+{c:"windows",q:"What is the difference between Sleep and Hibernate?",o:["No difference","Sleep keeps RAM powered; Hibernate saves RAM to disk and powers off","Sleep saves to disk; Hibernate keeps RAM powered","Hibernate is faster to resume"],a:1},
+{c:"windows",q:"What does `powercfg /batteryreport` do?",o:["Shows CPU power usage","Generates a detailed battery usage report","Configures power plan","Shows power settings"],a:1},
+{c:"windows",q:"What does `gpupdate /force` do?",o:["Updates GPU drivers","Forces Group Policy refresh","Updates graphics settings","Regenerates group permissions"],a:1},
+{c:"windows",q:"What does `gpedit.msc` open?",o:["GPU editor","Group Policy Editor","General preferences","Git policy editor"],a:1},
+{c:"windows",q:"What is Active Directory?",o:["A file indexing service","A Windows directory and identity management service","An antivirus tool","A backup service"],a:1},
+{c:"windows",q:"What does RDP stand for?",o:["Remote Desktop Protocol","Rapid Data Processing","Remote Drive Partition","Reliable Data Path"],a:0},
+{c:"windows",q:"What does `mstsc` open?",o:["Microsoft Storage Console","Remote Desktop Connection client","Microsoft System Tools Control","Media streaming"],a:1},
+{c:"windows",q:"What is the default Remote Desktop port?",o:["80","443","3389","22"],a:2},
+{c:"windows",q:"What does `net share` do?",o:["Shows network speed","Manages shared folders","Shows network users","Shares internet"],a:1},
+{c:"windows",q:"What is UNC path format in Windows?",o:["//server/share","\\\\server\\share","http://server/share","ftp://server/share"],a:1},
+{c:"windows",q:"What does `mklink` do?",o:["Makes a folder","Creates symbolic or hard links","Makes network link","Marks a link"],a:1},
+{c:"windows",q:"What does `assoc .txt` show?",o:["File association for .txt","ASCII text settings","App association menu","All text files"],a:0},
+{c:"windows",q:"What does `ftype txtfile` show?",o:["File type list","Open command for txtfile type","Font type","Filtered type"],a:1},
+{c:"windows",q:"What is the Windows PATH variable used for?",o:["File path shortcuts","Directories Windows searches when running commands","Path to user profile","Network paths"],a:1},
+{c:"windows",q:"What does `where command` do in Windows CMD?",o:["Shows help","Shows full path to command executable","Shows where to install","Searches internet"],a:1},
+{c:"windows",q:"What does `type filename` do?",o:["Shows file type","Displays file contents in CMD","Opens file for editing","Changes file type"],a:1},
+{c:"windows",q:"What does `more filename` do in Windows CMD?",o:["Shows file metadata","Displays file contents page by page","Adds more content","Copies file"],a:1},
+{c:"windows",q:"What does `findstr pattern file` do?",o:["Finds string in registry","Searches for pattern in files (like grep)","Finds installed strings","Filters directory"],a:1},
+{c:"windows",q:"What does `move file destination` do?",o:["Copies file","Creates shortcut","Moves file to destination","Renames file only"],a:2},
+{c:"windows",q:"What does `ren file newname` do?",o:["Removes file","Renames file","Restores file","Runs file"],a:1},
+{c:"windows",q:"What does `md folder` do?",o:["Makes a drive","Creates a directory","Shows metadata","Manages drives"],a:1},
+{c:"windows",q:"What does `rd /s /q folder` do?",o:["Renames directory","Lists directory","Removes directory and contents silently","Reads directory"],a:2},
+{c:"windows",q:"What does `echo %DATE%` display?",o:["File date","Current date","Date variable","Last login date"],a:1},
+{c:"windows",q:"What does `echo %TIME%` display?",o:["Time zone","Timer value","Current time","Time since boot"],a:2},
+{c:"windows",q:"What does `doskey /history` show?",o:["DOS key map","CMD command history","Keyboard shortcuts","File history"],a:1},
+{c:"windows",q:"What does `ver` show in CMD?",o:["Vendor info","Verify setting","Windows version","Virtual environment"],a:2},
+{c:"windows",q:"What does `hostname` show in Windows CMD?",o:["Username","IP address","Computer name","Domain name"],a:2},
+{c:"windows",q:"What does `pathping host` do?",o:["Pings with path","Combines ping and tracert showing packet loss per hop","Shows network path only","Traces HTTPS path"],a:1},
+{c:"windows",q:"What does `arp -a` show?",o:["All routes","ARP cache mapping IP to MAC addresses","All processes","Active remote paths"],a:1},
+{c:"windows",q:"What does `route print` show?",o:["Installed routes","Network routing table","Route history","Router settings"],a:1},
+{c:"windows",q:"What does `nbtstat -a hostname` show?",o:["Network bandwidth","NetBIOS name table of remote host","Network bit stats","Name binding table"],a:1},
+{c:"windows",q:"What is the purpose of Windows Safe Mode?",o:["Run games faster","Minimal drivers and services for troubleshooting","Maximum performance mode","Secure browsing mode"],a:1},
+{c:"windows",q:"How do you enter Windows Safe Mode?",o:["Press F8 at boot (older) or Shift+Restart","Ctrl+Alt+S","Windows+S during boot","Type safemode in CMD"],a:0},
+{c:"windows",q:"What does System Restore do?",o:["Restores deleted files","Restores Windows system files to a previous restore point","Reinstalls Windows","Restores factory settings"],a:1},
+{c:"windows",q:"What does `rstrui.exe` open?",o:["Remote storage UI","System Restore wizard","Restart UI","Registry UI"],a:1},
+{c:"windows",q:"What is a Windows restore point?",o:["A saved backup of user files","A snapshot of system settings and files at a point in time","A drive partition","A system checkpoint file"],a:1},
+{c:"windows",q:"What does `msinfo32` open?",o:["Microsoft Info 32-bit","System Information tool","MS configuration editor","Module info tool"],a:1},
+{c:"windows",q:"What does the `perfmon` tool show?",o:["Performance Monitor showing real-time system metrics","Peripheral monitor","Permission monitor","Process former"],a:0},
+{c:"windows",q:"What is Windows Subsystem for Linux (WSL)?",o:["A virtual machine","A compatibility layer running Linux binaries natively on Windows","A Linux emulator","A Linux installer"],a:1},
+{c:"windows",q:"What command installs WSL on Windows 10/11?",o:["install wsl","wsl --install","enable-wsl","add-feature linux"],a:1},
+{c:"windows",q:"What does `winget install app` do?",o:["Shows app info","Installs app using Windows Package Manager","Updates Windows","Opens app store"],a:1},
+{c:"windows",q:"What does the `clip` command do?",o:["Clips document margins","Copies stdin to Windows clipboard","Clips video","Creates clip shortcut"],a:1},
+{c:"windows",q:"What does `certmgr.msc` open?",o:["Certificate of completion","Certificate Manager for managing digital certificates","Central manager","COM manager"],a:1},
+{c:"windows",q:"What file extension are Windows batch scripts?",o:[".sh",".bat or .cmd",".ps1",".exe"],a:1},
+{c:"windows",q:"What does `@echo off` do in a batch script?",o:["Turns off echo service","Disables printing commands to screen while running","Exits script","Enables silent mode"],a:1},
+{c:"windows",q:"What is a `.ps1` file?",o:["Photoshop file","PostScript file","PowerShell script file","Process snapshot"],a:2},
+{c:"windows",q:"What does `Get-Process` do in PowerShell?",o:["Gets process settings","Lists running processes","Gets process ID only","Gets process priority"],a:1},
+{c:"windows",q:"What does `Get-Service` do in PowerShell?",o:["Shows service manual","Lists Windows services and their status","Gets service logs","Gets service account"],a:1},
+{c:"windows",q:"What does `Set-ExecutionPolicy RemoteSigned` do in PowerShell?",o:["Blocks all scripts","Allows local and signed remote scripts to run","Allows all scripts","Blocks remote scripts only"],a:1},
+{c:"windows",q:"What is the Windows Security Center?",o:["A physical security system","Central hub showing firewall, antivirus and update status","A login manager","A network monitor"],a:1},
+{c:"windows",q:"What does `netsh wlan show profiles` do?",o:["Shows LAN settings","Lists saved Wi-Fi network profiles","Shows active connections","Shows network hardware"],a:1},
+{c:"windows",q:"What does `netsh int ip reset` do?",o:["Resets network interfaces list","Resets TCP/IP stack to default","Resets Wi-Fi password","Resets network shares"],a:1},
+{c:"windows",q:"What does the `subst` command do?",o:["Substitutes file content","Maps a path to a virtual drive letter","Substitutes user accounts","Subtracts from quota"],a:1},
+{c:"windows",q:"What does `compact /c file` do?",o:["Copies file","Compresses file using NTFS compression","Checks file","Combines files"],a:1},
+{c:"windows",q:"What does `icacls file /grant user:F` do?",o:["Grants IP access","Grants user full control permissions on file","Shows ACL","Installs CA certificate"],a:1},
+{c:"windows",q:"What does `takeown /f file` do?",o:["Takes file offline","Takes ownership of a file","Takes file snapshot","Takes file backup"],a:1},
+{c:"windows",q:"What is the difference between a standard and administrator account in Windows?",o:["No difference","Admin can make system-wide changes; standard has limited access","Standard can install drivers","Admin is used for daily tasks"],a:1},
+{c:"windows",q:"What does Windows Hello do?",o:["Displays welcome screen","Biometric authentication (face, fingerprint, PIN)","Sends greeting messages","Sets Hello screensaver"],a:1},
+{c:"windows",q:"What is OneDrive?",o:["A file download manager","Microsoft cloud storage integrated into Windows","A drive optimiser","A network drive"],a:1},
+{c:"windows",q:"What does `wscript` run?",o:["Windows copy script","Windows Script Host for running VBScript or JScript","Web script","Wireless script"],a:1},
+{c:"windows",q:"What does `mmc` open?",o:["Memory Management Console","Microsoft Management Console","Multimedia Controller","Mass media config"],a:1},
+{c:"windows",q:"What does pressing F5 do in File Explorer?",o:["Opens properties","Creates new folder","Refreshes the view","Renames file"],a:2},
+{c:"windows",q:"What does Alt+Enter do in File Explorer?",o:["Edits filename","Opens file properties","Opens file","Enters directory"],a:1},
+{c:"windows",q:"What does `expand archive.cab destination` do?",o:["Expands disk","Extracts files from a Cabinet (.cab) archive","Expands partition","Extends drive"],a:1},
+{c:"windows",q:"What is the Windows Startup folder used for?",o:["Boot files","Programs placed here run automatically at user login","System startup scripts","Driver loading"],a:1},
+{c:"windows",q:"What does `msdt.exe` run?",o:["Microsoft Diagnostic Tool","Microsoft Support Diagnostic Tool","Microsoft System Details","Mixed storage detector"],a:1},
+{c:"windows",q:"What does Windows Sandbox do?",o:["Tests games","Provides an isolated temporary desktop for safely running applications","Sandbox gaming environment","Creates VM"],a:1},
+{c:"windows",q:"What does `Hyper-V` provide in Windows?",o:["Hyper video support","Built-in hypervisor for creating virtual machines","High volume storage","Hyper-threading control"],a:1},
+{c:"windows",q:"What does `dxcpl.exe` open?",o:["DirectX Control Panel","Disk XCopy Log","Driver XML configuration","Display config panel"],a:0},
+{c:"windows",q:"What command shows mapped network drives in CMD?",o:["net drives","net use","drive list","map show"],a:1},
+{c:"windows",q:"What does `net use Z: \\\\server\\share` do?",o:["Tests share path","Maps a network share to drive Z:","Removes drive Z:","Shows share info"],a:1},
+{c:"windows",q:"What does pressing Windows+PrintScreen do?",o:["Opens screenshot tool","Takes screenshot and saves to Screenshots folder","Copies screen to clipboard","Opens Snipping Tool"],a:1},
+{c:"windows",q:"What is the Snipping Tool used for?",o:["Cutting video clips","Capturing screenshots of selected areas","Snipping code","Clipping text"],a:1},
+{c:"windows",q:"What does `cleanmgr` run?",o:["Clean network manager","Disk Cleanup utility","Cleaner manager app","Cleanup group policy"],a:1},
+{c:"windows",q:"What does `msiexec /i package.msi` do?",o:["Modifies MSI","Installs an MSI package","Migrates files","Makes system image"],a:1},
+{c:"windows",q:"What file format do Windows installers often use?",o:[".exe only",".msi (Windows Installer package)","setup.bat",".deb"],a:1},
+{c:"windows",q:"What does Task Scheduler's trigger define?",o:["What the task does","When or under what condition the task runs","Who runs the task","How long the task runs"],a:1},
+{c:"windows",q:"What does `wmic cpu get name` do?",o:["Lists CPU processes","Shows CPU name using WMI","Counts CPU cores","Shows CPU temperature"],a:1},
+{c:"windows",q:"What is WMI?",o:["Windows Media Interface","Windows Management Instrumentation for querying system info","Wireless Module Interface","Windows Module Installer"],a:1},
+{c:"windows",q:"What does `shutdown /r /t 0` do?",o:["Shuts down immediately","Restarts computer immediately","Reboots in 0 hours","Schedules restart"],a:1},
+{c:"windows",q:"What does `shutdown /s /t 60` do?",o:["Suspends for 60 seconds","Shuts down after 60 seconds","Schedules for 60 minutes","Starts in 60 seconds"],a:1},
+{c:"windows",q:"What does `shutdown /a` do?",o:["Shuts down all users","Aborts a scheduled shutdown","Autoshutdown","Shows shutdown log"],a:1},
+{c:"windows",q:"What does pressing F2 do on a selected file in Windows?",o:["Opens file","Shows properties","Renames the file","Refreshes"],a:2},
+{c:"windows",q:"What does `xcopy /s source dest` do?",o:["Copies only files","Copies directory and non-empty subdirectories","Cross-copies to network","Copies system files"],a:1},
+{c:"windows",q:"What does `forfiles /m *.log /c \"cmd /c del @file\"` do?",o:["Lists log files","Deletes all .log files using forfiles","Formats log files","Finds log files"],a:1},
+{c:"windows",q:"What does the `nfc` command stand for in Windows context?",o:["Network File Copy","Near Field Communication","No File Configuration","Network Folder Check"],a:1},
+{c:"windows",q:"What is the default Windows shell?",o:["PowerShell","bash","cmd.exe (Command Prompt)","wscript"],a:2},
+{c:"windows",q:"What does `Get-ChildItem` do in PowerShell?",o:["Gets child processes","Lists files and directories (like ls/dir)","Gets child windows","Lists child users"],a:1},
+{c:"windows",q:"What does `Copy-Item source dest` do in PowerShell?",o:["Copies item properties","Copies files or directories","Creates item copy list","Clones item settings"],a:1},
+{c:"windows",q:"What does `Remove-Item file` do in PowerShell?",o:["Removes item from list","Deletes a file or directory","Removes item permissions","Removes from registry"],a:1},
+{c:"windows",q:"What does `Write-Host 'text'` do in PowerShell?",o:["Writes to file","Writes to event log","Outputs text to console","Writes to clipboard"],a:2},
+{c:"windows",q:"What does `$PSVersionTable` show in PowerShell?",o:["PS variable types","PowerShell version information","PS table settings","Process version table"],a:1},
+{c:"windows",q:"What does `Invoke-WebRequest URL` do in PowerShell?",o:["Runs web tests","Downloads content from a URL","Invokes web server","Opens web browser"],a:1},
+{c:"windows",q:"What does `Test-Path 'C:\\folder'` do in PowerShell?",o:["Tests path speed","Returns true/false whether path exists","Tests path permissions","Tests network path"],a:1},
+{c:"windows",q:"What does `New-Item -ItemType Directory -Name folder` do in PowerShell?",o:["Creates new item list","Creates a new directory","Creates new file item","Creates item type"],a:1},
+{c:"windows",q:"What does `Start-Process notepad` do in PowerShell?",o:["Starts notepad service","Starts a new Notepad process","Starts process list","Starts process monitor"],a:1},
+{c:"windows",q:"What does `Stop-Service -Name Spooler` do in PowerShell?",o:["Stops all services","Pauses Spooler service","Stops the Print Spooler service","Removes Spooler service"],a:2},
+{c:"windows",q:"What is Windows PE (WinPE)?",o:["Windows Performance Edition","Lightweight Windows for deployment and recovery","Windows Portable Edition","Windows Program Executor"],a:1},
+{c:"windows",q:"What does `reagentc /enable` do?",o:["Enables agent control","Enables Windows Recovery Environment","Enables reagent service","Reactivates agent"],a:1},
+{c:"windows",q:"What does pressing Windows+X do in Windows 10/11?",o:["Opens Xbox app","Opens quick access/power user menu","Closes active window","Opens search"],a:1},
+{c:"windows",q:"What is the purpose of the Windows hosts file?",o:["Hosts website list","Maps hostnames to IP addresses locally","Blocks all websites","Stores network passwords"],a:1},
+{c:"windows",q:"Where is the Windows hosts file located?",o:["C:\\Windows\\System32\\drivers\\etc\\hosts","C:\\hosts","C:\\Windows\\hosts","C:\\System\\hosts"],a:0},
+];
+
+// ═══════════════════════════════════════════════════════════
+//  QUIZ STATE
+// ═══════════════════════════════════════════════════════════
+let quiz = [];     // 100 selected questions
+let cur  = 0;
+let userAnswers = []; // null = skipped, -1 = skipped, 0-3 = chosen
+let timerID = null;
+let timeLeft = 0;
+
+function shuffle(arr){ for(let i=arr.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[arr[i],arr[j]]=[arr[j],arr[i]]}return arr; }
+
+function pickQuestions(){
+  const linux   = shuffle(BANK.filter(q=>q.c==="linux"));
+  const windows = shuffle(BANK.filter(q=>q.c==="windows"));
+  // 55 linux, 45 windows
+  return shuffle([...linux.slice(0,55), ...windows.slice(0,45)]);
+}
+
+function show(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+// ─── START ────────────────────────────────────────────────
+function startQuiz(){
+  quiz = pickQuestions();
+  cur  = 0;
+  userAnswers = new Array(100).fill(null);
+  timeLeft = 25*60;
+  show('quiz-screen');
+  renderQ();
+  clearInterval(timerID);
+  timerID = setInterval(tickTimer,1000);
+  updateTimer();
+}
+
+function tickTimer(){
+  timeLeft--;
+  updateTimer();
+  if(timeLeft<=0){ clearInterval(timerID); endQuiz(); }
+}
+
+function updateTimer(){
+  const m = Math.floor(timeLeft/60);
+  const s = timeLeft%60;
+  const el = document.getElementById('timer');
+  el.textContent = `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+  el.className = 'timer';
+  if(timeLeft<=300) el.classList.add('warn');
+  if(timeLeft<=60)  el.classList.add('danger');
+}
+
+// ─── RENDER QUESTION ──────────────────────────────────────
+function renderQ(){
+  const q = quiz[cur];
+  document.getElementById('qnum').textContent = cur+1;
+  document.getElementById('prog').style.width = `${cur}%`;
+
+  const catLabel = q.c==='linux' ? '🐧 Linux' : '🪟 Windows';
+  const catClass = q.c;
+
+  const letters = ['A','B','C','D'];
+  const sel = userAnswers[cur];
+
+  const optsHtml = q.o.map((opt,i)=>`
+    <button class="opt${sel===i?' sel':''}" onclick="selectOpt(${i})" data-idx="${i}">
+      <span class="oletter">${letters[i]}</span>${opt}
+    </button>`).join('');
+
+  document.getElementById('qwrap').innerHTML = `
+    <div class="cat-pill ${catClass}">${catLabel}</div>
+    <div class="qnum">QUESTION ${String(cur+1).padStart(3,'0')} OF 100</div>
+    <div class="qtext">${q.q}</div>
+    <div class="opts">${optsHtml}</div>
+    <div class="qfooter">
+      <button class="btn-skip" onclick="skipQ()">Skip →</button>
+      <button class="btn-next" onclick="nextQ()">${cur===99?'Finish ✓':'Next →'}</button>
+    </div>
+    <div class="enter-tip">Press <kbd>Enter</kbd> to continue &nbsp;·&nbsp; <kbd>1</kbd><kbd>2</kbd><kbd>3</kbd><kbd>4</kbd> to select &nbsp;·&nbsp; <kbd>S</kbd> to skip</div>
+  `;
+}
+
+function selectOpt(i){
+  userAnswers[cur] = i;
+  renderQ();
+}
+
+function skipQ(){
+  if(userAnswers[cur]===null) userAnswers[cur]=-1;
+  nextQ();
+}
+
+function nextQ(){
+  if(userAnswers[cur]===null) userAnswers[cur]=-1; // auto-skip if nothing chosen
+  if(cur<99){ cur++; renderQ(); }
+  else{ endQuiz(); }
+}
+
+// ─── END QUIZ ─────────────────────────────────────────────
+function endQuiz(){
+  clearInterval(timerID);
+  let correct=0,wrong=0,skipped=0;
+  quiz.forEach((q,i)=>{
+    const ua = userAnswers[i];
+    if(ua===null||ua===-1) skipped++;
+    else if(ua===q.a) correct++;
+    else wrong++;
+  });
+
+  document.getElementById('score-big').textContent = correct;
+  document.getElementById('rs-c').textContent = correct;
+  document.getElementById('rs-w').textContent = wrong;
+  document.getElementById('rs-s').textContent = skipped;
+
+  const pct = correct;
+  let gt,gm;
+  if(pct>=90){gt='Distinction 🏆';gm='Outstanding! Exceptional mastery of Linux & Windows.';}
+  else if(pct>=80){gt='Merit 🎯';gm='Excellent! Strong command of OS fundamentals.';}
+  else if(pct>=70){gt='Credit 👍';gm='Good performance. A few areas worth revisiting.';}
+  else if(pct>=60){gt='Pass 📚';gm='Passing grade. Spend more time with the material.';}
+  else if(pct>=50){gt='Near Pass ⚠️';gm='Just below passing. More practice recommended.';}
+  else{gt='Fail 🔁';gm='Needs significant improvement. Review and retry!';}
+
+  document.getElementById('grade-text').textContent = gt;
+  document.getElementById('grade-msg').textContent  = gm;
+  show('results-screen');
+}
+
+// ─── REVIEW ───────────────────────────────────────────────
+let revFilter = 'all';
+
+function showReview(){
+  buildReview('all');
+  document.querySelectorAll('.fb').forEach(b=>b.classList.remove('on'));
+  document.querySelector('.fb').classList.add('on');
+  show('review-screen');
+}
+
+function showResults(){ show('results-screen'); }
+
+function filterRev(f,btn){
+  revFilter=f;
+  document.querySelectorAll('.fb').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+  buildReview(f);
+}
+
+function buildReview(filter){
+  const letters=['A','B','C','D'];
+  const list = document.getElementById('revlist');
+  list.innerHTML='';
+  let count=0;
+
+  quiz.forEach((q,i)=>{
+    const ua  = userAnswers[i];
+    const skipped = ua===null||ua===-1;
+    const correct = !skipped && ua===q.a;
+    const wrong   = !skipped && !correct;
+    const status  = correct?'correct':skipped?'skipped':'wrong';
+
+    if(filter!=='all' && filter!==status) return;
+    count++;
+
+    const catLabel = q.c==='linux'?'🐧 Linux':'🪟 Windows';
+
+    const optsHtml = q.o.map((opt,oi)=>{
+      let cls='rio';
+      let tag='';
+      if(oi===q.a){ cls+=' is-correct-answer'; tag=`<span class="rio-tag">Correct</span>`; }
+      else if(!skipped && oi===ua){ cls+=' is-user-wrong'; tag=`<span class="rio-tag">Your answer</span>`; }
+      return `<div class="${cls}"><div class="rio-dot"></div><strong>${letters[oi]}.</strong> ${opt}${tag}</div>`;
+    }).join('');
+
+    const badgeLabel = correct?'Correct':skipped?'Skipped':'Wrong';
+    const div=document.createElement('div');
+    div.className=`ri ${status}`;
+    div.innerHTML=`
+      <div class="ri-head">
+        <span class="ri-num">Q${i+1} &nbsp;·&nbsp; ${catLabel}</span>
+        <span class="ri-badge ${status}">${badgeLabel}</span>
+      </div>
+      <div class="ri-q">${q.q}</div>
+      <div class="ri-opts">${optsHtml}</div>`;
+    list.appendChild(div);
+  });
+
+  if(count===0) list.innerHTML='<div class="empty-msg">No questions in this category.</div>';
+}
+
+function restartQuiz(){ startQuiz(); }
+
+// ─── KEYBOARD ─────────────────────────────────────────────
+document.addEventListener('keydown',e=>{
+  const active = document.querySelector('.screen.active')?.id;
+  if(active==='quiz-screen'){
+    if(e.key==='Enter') nextQ();
+    if(e.key==='1') selectOpt(0);
+    if(e.key==='2') selectOpt(1);
+    if(e.key==='3') selectOpt(2);
+    if(e.key==='4') selectOpt(3);
+    if(e.key==='s'||e.key==='S') skipQ();
+  }
+  if(active==='start-screen'&&e.key==='Enter') startQuiz();
+});
+</script>
+</body>
+</html>
